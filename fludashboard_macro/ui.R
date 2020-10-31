@@ -1,33 +1,40 @@
-#
-# This is the user-interface definition of a Shiny web application. You can
-# run the application by clicking 'Run App' above.
-#
-# Find out more about building applications with Shiny here:
-#
-#    http://shiny.rstudio.com/
-#
 
-library(shiny)
+# Packages that will be loaded for this application
+list.of.packages <- c('shiny',
+                      'tidyverse',
+                      'here',
+                      'shinycssloaders',
+                      'bootstraplib')
+new.packages <- list.of.packages[!(list.of.packages %in%
+                                       installed.packages()[, "Package"])]
+if (length(new.packages))
+    install.packages(new.packages, dependencies = TRUE)
 
-# Define UI for application that draws a histogram
-shinyUI(fluidPage(
+# Importar pacotes necessário
+for (package in list.of.packages) {
+    library(package, character.only = TRUE)
+}
+options(bitmapType = "cairo")
 
-    # Application title
-    titlePanel("Old Faithful Geyser Data"),
+addHeader <- function(contentDiv){
+    header <- includeHTML('www/super-header.html')
+    contentDiv <- tagAppendChild(contentDiv, div(class='row', header))
+}
 
-    # Sidebar with a slider input for number of bins
-    sidebarLayout(
-        sidebarPanel(
-            sliderInput("bins",
-                        "Number of bins:",
-                        min = 1,
-                        max = 50,
-                        value = 30)
-        ),
+addFooter <- function(contentDiv){
+    contentDiv <- tagAppendChild(contentDiv, div(class='row-fluid',
+                                                 id="footer-brasil"))
+}
 
-        # Show a plot of the generated distribution
-        mainPanel(
-            plotOutput("distPlot")
-        )
+getContent <- function(){
+    contentDiv <- div(class="container-fluid") %>%
+        addHeader() %>%
+        addFooter()
+}
+
+shinyUI(
+    bootstrapPage(
+        title = "Infogripe",
+        getContent()
     )
-))
+)
