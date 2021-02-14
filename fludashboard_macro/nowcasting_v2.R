@@ -14,9 +14,9 @@ gg <- function(x, dados, idx, Fim.sat, Dmax){
     # do domingo da respectiva ultima epiweek
     # com dados faltantes
     filter(Date >= Fim.sat - Dmax  ) %>%
-    group_by(Date) %>% 
-    dplyr::summarise( 
-      Casos = sum(Casos) 
+    group_by(Date) %>%
+    dplyr::summarise(
+      Casos = sum(Casos)
     )
   data.aggregated
 }
@@ -24,33 +24,33 @@ gg <- function(x, dados, idx, Fim.sat, Dmax){
 
 # Algorithm to get samples for the predictive distribution for the number of cases
 
-nowcasting <- function(output.day, dadosRio.ag, 
+nowcasting <- function(output.day, dadosRio.ag,
                        Fim = today.week, Dm = Dmax){
-  
+
   index.missing = which(is.na(dadosRio.ag$Casos))
-  
-  
+
+
   # Step 1: Sampling from the approximate posterior distribution using INLA
   srag.samples.list <- inla.posterior.sample(n = 1000, output.day)
-  
+
   # Step 2: Sampling the missing triangle (in vector form) from the likelihood using INLA estimates
-  vector.samples <- lapply(X = srag.samples.list, 
+  vector.samples <- lapply(X = srag.samples.list,
                            FUN = ff,
                            idx = index.missing
   )
-  
+
   # Step 3: Calculate N_t for each triangle sample {N_t : t=Tactual-Dmax+1,...Tactual}
   tibble.samples <- lapply( X = vector.samples,
                             FUN = gg,
-                            dados = dadosRio.ag, 
+                            dados = dadosRio.ag,
                             idx = index.missing,
-                            Fim.sat = Fim, 
+                            Fim.sat = Fim,
                             Dmax = Dm
   )
-  
+
   # Nowcasting
   srag.pred <- bind_rows(tibble.samples, .id = "sample")
-  
+
   srag.pred
 }
 
@@ -63,7 +63,7 @@ nowcasting <- function(output.day, dadosRio.ag,
 #   output <- inla(model, family = "nbinomial", data = delay.inla.trian,
 #                  control.predictor = list(link = 1, compute = T),
 #                  control.compute = list( config = T, waic=TRUE, dic=TRUE),
-#                  control.family = list( 
+#                  control.family = list(
 #                    hyper = list("theta" = list(prior = "loggamma", param = c(0.1, 0.1)))
 #                  ),
 #                  control.inla = list(h = h.value)
@@ -74,7 +74,7 @@ nowcasting <- function(output.day, dadosRio.ag,
 #   trials <- trials + 1
 # }
 # print(paste('Hessian trials:',trials))
-# 
+#
 ######################
 
 
@@ -84,15 +84,15 @@ nowcast.INLA <- function(dados.ag, model.day,...){
   h.value <- 0.01
   trials <- 0
   while (hess.min <= 0 & trials < 50){
-    output <- inla(formula = model.day, 
-                 family = "nbinomial", 
+    output <- inla(formula = model.day,
+                 family = "nbinomial",
                  data = dados.ag,
                  num.threads = 4,
                  control.predictor = list(link = 1, compute = T),
                  control.compute = list( config = T),
                  control.inla = list(h = h.value),
                  ...
-                 # control.family = list( 
+                 # control.family = list(
                  # hyper = list("theta" = list(
                  #   prior = "loggamma", param = c(1, 0.1)))
                  #   )
@@ -108,43 +108,83 @@ nowcast.INLA <- function(dados.ag, model.day,...){
 
 # Plot nowcasting
 plot.nowcast <- function(pred.summy, Fim, nowcast = T){
-  
+
   if(!nowcast){
     # Time series
-    p0.day <- pred.summy %>% 
-      ggplot(aes(x =  Date, y = Casos, 
-                 color = "Casos notificados", 
-                 linetype = "Casos notificados")) + 
-      geom_line(size = 1, na.rm = T) 
+    p0.day <- pred.summy %>%
+      ggplot(aes(x =  Date, y = Casos,
+                 color = "Casos notificados",
+                 linetype = "Casos notificados")) +
+      geom_line(size = 1, na.rm = T)
   } else {
-    p0.day <- pred.summy %>% 
-      ggplot(aes(x =  Date, y = Casos.cut, 
-                 color = "Casos notificados", 
-                 linetype = "Casos notificados")) + 
+    p0.day <- pred.summy %>%
+      ggplot(aes(x =  Date, y = Casos.cut,
+                 color = "Casos notificados",
+                 linetype = "Casos notificados")) +
       geom_line(size = 1, na.rm = T) +
-      geom_ribbon( aes( ymin=IC90I, ymax=IC90S), fill = 'gray', 
-                   color = 'gray', alpha = 0.5, 
-                   show.legend = F) + 
-      geom_line(aes(x = Date, y = Median, 
-                    colour = "Casos estimados", 
-                    linetype = "Casos estimados"), 
+      geom_ribbon( aes( ymin=IC90I, ymax=IC90S), fill = 'gray',
+                   color = 'gray', alpha = 0.5,
+                   show.legend = F) +
+      geom_line(aes(x = Date, y = Median,
+                    colour = "Casos estimados",
+                    linetype = "Casos estimados"),
                 size = 1, na.rm = T) +
       geom_line(aes(x=Date, y=rolling_average,
                     colour='Média móvel',
                     linetype='Média móvel'), size=1) +
-      scale_colour_manual(name = "", 
-                          values = c("black", "black", 'blue'), 
+      scale_colour_manual(name = "",
+                          values = c("black", "black", 'blue'),
                           guide = guide_legend(reverse=F)) +
-      scale_linetype_manual(name = "", 
-                            values = c("dotted", "solid", 'solid'), 
+      scale_linetype_manual(name = "",
+                            values = c("dotted", "solid", 'solid'),
                             guide = guide_legend(reverse=F))
   }
-  
-  p0.day <- p0.day + 
-    #ylab("Casos hospitalização de SRAG") + 
+
+  p0.day <- p0.day +
+    #ylab("Casos hospitalização de SRAG") +
     #xlab("Tempo") +
     theme_bw( base_size = 14) +
-    theme( legend.position = c(0.2, 0.8), legend.title = element_blank()) 
-  
+    theme( legend.position = c(0.2, 0.8), legend.title = element_blank())
+
   p0.day
+}
+
+# Function for trend plot
+plot.ts.tendencia <- function(df,
+                              today.week=0,
+                              xbreaks=c(1, seq(4, 52, 4)),
+                              xlbls=c(1, seq(4, 52, 4)),
+                              xlimits=c(1, 53)){
+  plt <- df %>%
+    select(Date, tendencia.3s, tendencia.6s) %>%
+    mutate(tendencia.3s = case_when(
+      Date < today.week - 1 ~ NA_real_,
+      TRUE ~ tendencia.3s
+    )) %>%
+    rename('curto prazo'=tendencia.3s, 'longo prazo'=tendencia.6s) %>%
+    pivot_longer(-Date, names_to = 'janela', values_to = 'tendencia') %>%
+    arrange(desc(janela)) %>%
+    ggplot(aes(x=Date, y=tendencia, color=janela)) +
+    geom_hline(yintercept = 0, color='grey', size=1.5, linetype=2) +
+    geom_line() +
+    geom_point() +
+    scale_y_continuous(breaks = seq(-1,1,.5),
+                       labels=c('Prob. queda\n> 95%', 'Prob. queda\n> 75%', 'Estabilidade./\noscilação', 'Prob. cresc.\n> 75%', 'Prob. cresc.\n> 95%'),
+                       limits = c(-1,1),
+                       name=NULL) +
+    scale_x_continuous(breaks = xbreaks, labels = xlbls, limits = xlimits, name=NULL) +
+    scale_color_discrete(name=NULL) +
+    theme_Publication() +
+    theme(plot.margin=unit(c(1,0,5,5), units='pt'),
+          axis.text.y = element_text(size = rel(.8), angle=30),
+          legend.margin = margin(0,0,0,0, unit='pt'),
+          legend.justification=c(0,1),
+          legend.position=c(0.015, 1.05),
+          legend.background = element_blank(),
+          legend.key = element_blank(),
+          legend.key.size = unit(14, 'pt'),
+          legend.text = element_text(family = 'Roboto', size = rel(.8))
+    )
+
+  return(plt)
 }

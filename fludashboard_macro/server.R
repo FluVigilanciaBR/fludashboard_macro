@@ -19,6 +19,8 @@ options(bitmapType = "cairo")
 
 source(here("fludashboard_macro/nowcasting_v2.R"))
 source(here('fludashboard_macro/theme.publication.R'))
+source(here('fludashboard_macro/episem.R'))
+
 # Shape info
 macros_file <- "fludashboard_macro/geobrazilmacrosaude.RDS"
 
@@ -27,10 +29,14 @@ datafiles <- Sys.getenv(c("MACROSDATA", "CAPITALSDATA"),
                         names = T)
 macros_data <- readRDS(datafiles[[1]])
 macros_saude <- readRDS(here(macros_file))
-
+today.week <- 5
 coerce2double <- function(df){
     as.numeric(unlist(df))
 }
+
+# Epiweek
+
+
 # Define server logic required to draw a histogram
 shinyServer(function(input, output) {
     macsaud.id <- shiny::reactiveVal(0)
@@ -74,57 +80,67 @@ shinyServer(function(input, output) {
             ) %>%
             setView(-50, -11, 4)
     })
-    output$trendPlot <- renderPlot({
-        # print(length(macsaud.id()) == 0)
-        # if(length(macsaud.id()) == 0)
-        #     pred.now.srag <- NA
-        # else {
-        # xbreaks <- c(1, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52)
-        # xlimits <- c(1, 52)
-        # macro_name <- as.character(macros_saude %>%
-        #                            as.data.frame() %>%
-        #                            filter(CO_MACSAUD == macsaud.id()) %>%
-        #                            select(DS_ABREV_macsaud))
-        # uf <- as.character(macros_saude %>%
-        #                    as.data.frame() %>%
-        #                    filter(CO_MACSAUD == macsaud.id()) %>%
-        #                    select(DS_UF_SIGLA))
-        # pred.srag.summy <- NA
-        # p.now.srag <- plot.nowcast(pred.srag.summy, Fim=today.week ) +
-        #   ylab("Incidência de SRAG (por 100mil hab.)") +
-        #   xlab("Semana de primeiros sintomas") +
-        #   scale_x_continuous(breaks = xbreaks, limits = xlimits) +
-        # #theme_Publication(base_size = 16, base_family = 'Roboto') +
-        #   ggtitle(paste0(uf, ": ", macro_name)) +
-        #   theme(plot.margin=unit(c(1,0,5,5), units='pt'),
-        #         axis.text = element_text(size = rel(1)),
-        #         legend.margin = margin(0,0,0,0, unit='pt'),
-        #         legend.justification=c(0,1),
-        #         legend.position=c(0.015, 1.05),
-        #         legend.background = element_blank(),
-        #         legend.key = element_blank(),
-        #         legend.key.size = unit(14, 'pt'),
-        #         legend.text = element_text(family = 'Roboto', size = rel(1)))
-        # }
-        # p.now.srag
-        NA
-    }, height = "auto")
-    output$MACSAUD <- renderText({
-        if (length(macsaud.id()) == 0)
-            text <- "Selecione uma macrorregião"
+    output$castingPlot <- renderPlot({
+
+        if(length(macsaud.id()) == 0)
+            p.now.srag <- NA
         else {
+            epilbls <- c(1, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52)
+            xbreaks <- c(epilbls, epilbls + 53)
+            xlbls <- c(epilbls, epilbls)
+            xlimits <- c(1, macros_data %>%
+                             select(Date) %>% max())
             macro_name <- as.character(macros_saude %>%
-                                     as.data.frame() %>%
-                                     filter(CO_MACSAUD == macsaud.id()) %>%
-                                     select(DS_ABREV_macsaud))
+                                       as.data.frame() %>%
+                                       filter(CO_MACSAUD == macsaud.id()) %>%
+                                       select(DS_ABREV_macsaud))
             uf <- as.character(macros_saude %>%
-                                   as.data.frame() %>%
-                                   filter(CO_MACSAUD == macsaud.id()) %>%
-                                   select(DS_UF_SIGLA))
-            text <- paste(uf, "-", macro_name)
+                               as.data.frame() %>%
+                               filter(CO_MACSAUD == macsaud.id()) %>%
+                               select(DS_UF_SIGLA))
+            pred.srag.summy <- macros_data %>% filter(CO_MACSAUD == macsaud.id())
+            p.now.srag <- plot.nowcast(pred.srag.summy, Fim=today.week ) +
+              ylab("Incidência de SRAG (por 100mil hab.)") +
+              xlab("Semana de primeiros sintomas") +
+              scale_x_continuous(breaks = xbreaks, labels = xlbls, limits = xlimits) +
+              theme_Publication(base_size = 16, base_family = 'Roboto') +
+              theme(plot.margin=unit(c(1,0,5,5), units='pt'),
+                    axis.text = element_text(size = rel(1)),
+                    legend.margin = margin(0,0,0,0, unit='pt'),
+                    legend.justification=c(0,1),
+                    legend.position=c(0.015, 1.05),
+                    legend.background = element_blank(),
+                    legend.key = element_blank(),
+                    legend.key.size = unit(14, 'pt'),
+                    legend.text = element_text(family = 'Roboto', size = rel(1)))
+
+
         }
-        text
-    })
+        p.now.srag
+    }, height = "auto")
+
+    output$trendPlot <- renderPlot({
+
+        if(length(macsaud.id()) == 0)
+            p.nivel <- NA
+        else {
+            epilbls <- c(1, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52)
+            xbreaks <- c(epilbls, epilbls + 53)
+            xlbls <- c(epilbls, epilbls)
+            xlimits <- c(1, macros_data %>%
+                             select(Date) %>% max())
+            pred.srag.summy <- macros_data %>% filter(CO_MACSAUD == macsaud.id())
+
+            p.nivel <-  plot.ts.tendencia(df = pred.srag.summy,
+                                          today.week = today.week,
+                                          xbreaks = xbreaks,
+                                          xlbls = xlbls,
+                                          xlimits = xlimits)
+
+        }
+        p.nivel
+    }, height = 240)
+
 
     observe({
         event <- input$mapBrazil_shape_click

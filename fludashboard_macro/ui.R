@@ -4,6 +4,7 @@ list.of.packages <- c('shiny',
                       'tidyverse',
                       'here',
                       'shinycssloaders',
+                      'shinydashboard',
                       'leaflet',
                       'sf')
 
@@ -38,12 +39,30 @@ addHeader <- function(contentDiv) {
 }
 
 addContent <- function(contentDiv){
-    mapBrazil <- leafletOutput("mapBrazil", height = 700)
-    sidepanel <- tagList(
-        tags$h1(textOutput("MACSAUD")),
-        tags$div(plotOutput("trendPlot"))
+    mapBrazil <- shinydashboard::box(
+        leafletOutput("mapBrazil", height = 740),
+        title = "Tendência a longo prazo",
+        width = 12,
+        solidHeader = F,
+        status = "primary"
     )
-    panel <- fluidRow(column(6, mapBrazil), column(6, sidepanel))
+    sidepanel <- tagList(
+        shinydashboard::box(
+                        title = "Predição",
+                        status = "primary",
+                        width = 12,
+                        solidHeader = F,
+                        plotOutput("castingPlot")),
+        shinydashboard::box(
+            title = "Tendência",
+            status = "primary",
+            width = 12,
+            height = 300,
+            solidHeader = F,
+            plotOutput("trendPlot"))
+    )
+    panel <- fluidRow(column(6, mapBrazil),
+                      column(6, sidepanel))
     tabs <- tabsetPanel(
         type = "tabs",
         tabPanel(
@@ -75,8 +94,37 @@ headerStyle <- HTML('
         background: #dfdfdf;
         line-height: 0.8;
     }
+    .box {
+        position: relative;
+        border-radius: 3px;
+        background: #fff;
+        border-top: 3px solid #d2d6de;
+        margin-top: 10px;
+        margin-bottom: 10px;
+        width: 100%;
+        box-shadow: 0 1px 1px rgb(0 0 0 / 10%);
+    }
+    .nav-tabs>li.active>a, .nav-tabs>li.active>a:focus, .nav-tabs>li.active>a:hover {
+        background-color: #ecf0f5!important;
+    }
+    .box.box-solid {
+        border-top: 0;
+    }
+    .box-header {
+        color: #444;
+        display: block;
+        padding: 5px;
+        position: relative;
+    }
+    .box-title {
+        display: inline-block;
+        line-height : 1;
+    }
+    .box.box-primary{
+        border-top-color: #337ab7;
+    }
     .tab-content {
-        background: white!important;
+        background: #ecf0f5!important;
     }
     .navbar-brand-custom {
         font-size: 2rem;
