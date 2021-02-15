@@ -40,7 +40,8 @@ coerce2double <- function(df){
 
 # Define server logic required to draw a histogram
 shinyServer(function(input, output) {
-    macsaud.id <- shiny::reactiveVal(0)
+    macsaud.id <- shiny::reactiveVal(NA)
+    capital.name <- shiny::reactiveVal(NA)
     output$mapBrazilMacro <- renderLeaflet({
         # Consolidate data.frame
         filtered_data <- macros_data %>%
@@ -127,7 +128,7 @@ shinyServer(function(input, output) {
                 weight = 3,
                 color="#444",
                 fillOpacity = 1,
-                layerId = filtered_data$CO_MUN_RES,
+                layerId = filtered_data$cidade,
                 label = labels,
                 highlight = highlightOptions(
                     weight = 5,
@@ -146,69 +147,80 @@ shinyServer(function(input, output) {
 
 
     output$castingPlot <- renderPlot({
-
-        if(length(macsaud.id()) == 0)
+        if(is.na(macsaud.id()) || is.null(macsaud.id()))
             p.now.srag <- NA
         else {
-            epilbls <- c(1, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52)
-            xbreaks <- c(epilbls, epilbls + 53)
-            xlbls <- c(epilbls, epilbls)
             xlimits <- c(1, macros_data %>%
                              select(Date) %>% max())
-            macro_name <- as.character(macros_saude %>%
-                                       as.data.frame() %>%
-                                       filter(CO_MACSAUD == macsaud.id()) %>%
-                                       select(DS_ABREV_macsaud))
-            uf <- as.character(macros_saude %>%
-                               as.data.frame() %>%
-                               filter(CO_MACSAUD == macsaud.id()) %>%
-                               select(DS_UF_SIGLA))
             pred.srag.summy <- macros_data %>% filter(CO_MACSAUD == macsaud.id())
-            p.now.srag <- plot.nowcast(pred.srag.summy, Fim=today.week ) +
-              ylab("Incidência de SRAG (por 100mil hab.)") +
-              xlab("Semana de primeiros sintomas") +
-              scale_x_continuous(breaks = xbreaks, labels = xlbls, limits = xlimits) +
-              theme_Publication(base_size = 16, base_family = 'Roboto') +
-              theme(plot.margin=unit(c(1,0,5,5), units='pt'),
-                    axis.text = element_text(size = rel(1)),
-                    legend.margin = margin(0,0,0,0, unit='pt'),
-                    legend.justification=c(0,1),
-                    legend.position=c(0.015, 1.05),
-                    legend.background = element_blank(),
-                    legend.key = element_blank(),
-                    legend.key.size = unit(14, 'pt'),
-                    legend.text = element_text(family = 'Roboto', size = rel(1)))
-
+            p.now.srag <- plot.prediction(pred.srag.summy, today.week, xlimits)
 
         }
         p.now.srag
     }, height = "auto")
 
-    output$trendPlot <- renderPlot({
 
-        if(length(macsaud.id()) == 0)
+    output$castingCapitaisPlot <- renderPlot({
+        adm <- input$adm
+        capital.name.ctrl <- capital.name()
+        if(is.na(capital.name.ctrl) || is.null(capital.name.ctrl))
+            p.now.srag <- NA
+        else {
+            xlimits <- c(1, capitais_data %>%
+                             select(Date) %>% max())
+            mun_res_nome <- capital.name.ctrl
+            if (length(adm))
+                mun_res_nome <- paste(mun_res_nome, "-", adm)
+            pred.srag.summy <- capitais_data %>%
+                filter( CO_MUN_RES_nome == capital.name.ctrl )
+            p.now.srag <- plot.prediction(pred.srag.summy, today.week, xlimits)
+        }
+        p.now.srag
+    }, height = "auto")
+
+    output$trendPlot <- renderPlot({
+        if(is.na(macsaud.id()) || is.null(macsaud.id()))
             p.nivel <- NA
         else {
-            epilbls <- c(1, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52)
-            xbreaks <- c(epilbls, epilbls + 53)
-            xlbls <- c(epilbls, epilbls)
+
             xlimits <- c(1, macros_data %>%
                              select(Date) %>% max())
             pred.srag.summy <- macros_data %>% filter(CO_MACSAUD == macsaud.id())
 
             p.nivel <-  plot.ts.tendencia(df = pred.srag.summy,
                                           today.week = today.week,
-                                          xbreaks = xbreaks,
-                                          xlbls = xlbls,
                                           xlimits = xlimits)
 
         }
         p.nivel
     }, height = 240)
 
+    output$trendCapitaisPlot <- renderPlot({
+        adm <- input$adm
+        capital.name.ctrl <- capital.name()
+        if(is.na(capital.name.ctrl) || is.null(capital.name.ctrl))
+            p.nivel <- NA
+        else {
+            xlimits <- c(1, capitais_data %>%
+                             select(Date) %>% max())
+            mun_res_nome <- capital.name.ctrl
+            if (length(adm))
+                mun_res_nome <- paste(mun_res_nome, "-", adm)
+            pred.srag.summy <- capitais_data %>%
+                filter( CO_MUN_RES_nome == capital.name.ctrl )
+            p.nivel <-  plot.ts.tendencia(df = pred.srag.summy,
+                                          today.week = today.week,
+                                          xlimits = xlimits)
+        }
+        p.nivel
+    }, height = 240)
+
 
     observe({
-        event <- input$mapBrazilMacro_shape_click
-        macsaud.id(event$id)
+        eventMac <- input$mapBrazilMacro_shape_click
+        macsaud.id(eventMac$id)
+
+        eventCap <- input$mapBrazilCapitais_shape_click
+        capital.name(eventCap$id)
     })
 })
