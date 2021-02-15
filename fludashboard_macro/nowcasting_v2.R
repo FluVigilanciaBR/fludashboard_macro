@@ -149,6 +149,12 @@ plot.nowcast <- function(pred.summy, Fim, nowcast = T){
   p0.day
 }
 
+LEVELS.TENDENCIA <- c('Prob. queda\n> 95%',
+                      'Prob. queda\n> 75%',
+                      'Estabilidade./\noscilação',
+                      'Prob. cresc.\n> 75%',
+                      'Prob. cresc.\n> 95%')
+
 # Function for trend plot
 plot.ts.tendencia <- function(df,
                               today.week=0,
@@ -169,7 +175,7 @@ plot.ts.tendencia <- function(df,
     geom_line() +
     geom_point() +
     scale_y_continuous(breaks = seq(-1,1,.5),
-                       labels=c('Prob. queda\n> 95%', 'Prob. queda\n> 75%', 'Estabilidade./\noscilação', 'Prob. cresc.\n> 75%', 'Prob. cresc.\n> 95%'),
+                       labels= LEVELS.TENDENCIA,
                        limits = c(-1,1),
                        name=NULL) +
     scale_x_continuous(breaks = xbreaks, labels = xlbls, limits = xlimits, name=NULL) +

@@ -22,7 +22,7 @@ source(here('fludashboard_macro/theme.publication.R'))
 source(here('fludashboard_macro/episem.R'))
 
 # Shape info
-macros_file <- "fludashboard_macro/geobrazilmacrosaude.RDS"
+macros_file <- here("fludashboard_macro/geobrazilmacrosaude.RDS")
 
 #Data files
 datafiles <- Sys.getenv(c("MACROSDATA", "CAPITALSDATA"),
@@ -41,29 +41,38 @@ coerce2double <- function(df){
 shinyServer(function(input, output) {
     macsaud.id <- shiny::reactiveVal(0)
     output$mapBrazil <- renderLeaflet({
-
-        latest.tendencia.6s <- macros_data %>%
+        # Consolidate data.frame
+        filtered_data <- macros_data %>%
             filter(epiyear == 2021) %>%
             filter(epiweek == max(epiweek)) %>%
+            select(c(DS_UF_SIGLA, DS_NOMEPAD_macsaud, CO_MACSAUD, tendencia.6s))
+        latest.tendencia.6s <- filtered_data %>%
             select(tendencia.6s) %>%
-            coerce2double()
+            coerce2double() %>%
+            as.factor()
+        levels(latest.tendencia.6s) <- LEVELS.TENDENCIA
+        filtered_data$latest.tendencia.6s <- latest.tendencia.6s
 
-        pal <- colorNumeric("RdYlBu", domain = range(latest.tendencia.6s),
-                        reverse = F,
-                        na.color = "transparent")
-        labels <- paste(macros_saude$DS_UF_SIGLA, "-",
-                        macros_saude$DS_ABREV_macsaud)
+        geom_order <- match(filtered_data$CO_MACSAUD, macros_saude$CO_MACSAUD)
+        filtered_data$geom <- macros_saude[geom_order, "geom"]
+        labels <- paste(filtered_data$DS_UF_SIGLA, "-",
+                        filtered_data$DS_NOMEPAD_macsaud,
+                        ":", filtered_data$latest.tendencia.6s)
+
+        pal <- colorFactor("BrBG",
+                           domain = rev(unique(filtered_data$latest.tendencia.6s)),
+                           na.color = "transparent")
         leaflet() %>%
             addProviderTiles(providers$Esri.WorldGrayCanvas,
                              options = providerTileOptions(noWrap = TRUE)
             ) %>%
             addPolygons(
-                data = macros_saude$geom,
-                fillColor = pal(latest.tendencia.6s),
-                weight = 1,
+                data = filtered_data$geom,
+                fillColor = pal(filtered_data$latest.tendencia.6s),
+                weight = 2,
                 color="#ccc",
                 fillOpacity = 1,
-                layerId=macros_saude$CO_MACSAUD,
+                layerId=filtered_data$CO_MACSAUD,
                 highlight = highlightOptions(
                     weight = 5,
                     color="#000",
@@ -72,10 +81,10 @@ shinyServer(function(input, output) {
                 label = labels
             ) %>%
             addLegend(pal = pal,
-                      values = latest.tendencia.6s,
+                      values = filtered_data$latest.tendencia.6s,
                       opacity = 0.7,
                       title = NULL,
-                      labFormat = labelFormat(transform = function(x) sort(x, decreasing = TRUE)),
+                      #labFormat = labelFormat(transform = function(x) sort(x, decreasing = TRUE)),
                       position = "bottomright"
             ) %>%
             setView(-50, -11, 4)
