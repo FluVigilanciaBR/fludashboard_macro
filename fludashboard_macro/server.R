@@ -4,6 +4,8 @@ list.of.packages <- c('shiny',
                       'here',
                       'ggthemes',
                       'shinycssloaders',
+                      "geobr",
+                      "stringr",
                       'leaflet')
 
 new.packages <- list.of.packages[!(list.of.packages %in%
@@ -23,24 +25,23 @@ source(here('fludashboard_macro/episem.R'))
 
 # Shape info
 macros_file <- here("fludashboard_macro/geobrazilmacrosaude.RDS")
+states <- geobr::read_state(year=2019)
 
 #Data files
 datafiles <- Sys.getenv(c("MACROSDATA", "CAPITALSDATA"),
                         names = T)
 macros_data <- readRDS(datafiles[[1]])
+capitais_data <- readRDS(datafiles[[2]])
 macros_saude <- readRDS(here(macros_file))
 today.week <- 5
 coerce2double <- function(df){
     as.numeric(unlist(df))
 }
 
-# Epiweek
-
-
 # Define server logic required to draw a histogram
 shinyServer(function(input, output) {
     macsaud.id <- shiny::reactiveVal(0)
-    output$mapBrazil <- renderLeaflet({
+    output$mapBrazilMacro <- renderLeaflet({
         # Consolidate data.frame
         filtered_data <- macros_data %>%
             filter(epiyear == 2021) %>%
@@ -52,16 +53,17 @@ shinyServer(function(input, output) {
             as.factor()
         levels(latest.tendencia.6s) <- LEVELS.TENDENCIA
         filtered_data$latest.tendencia.6s <- latest.tendencia.6s
-
         geom_order <- match(filtered_data$CO_MACSAUD, macros_saude$CO_MACSAUD)
         filtered_data$geom <- macros_saude[geom_order, "geom"]
+
+        # MAP
+        pal <- colorFactor("BrBG",
+                           domain = rev(unique(filtered_data$latest.tendencia.6s)),
+                           reverse = T,
+                           na.color = "transparent")
         labels <- paste(filtered_data$DS_UF_SIGLA, "-",
                         filtered_data$DS_NOMEPAD_macsaud,
                         ":", filtered_data$latest.tendencia.6s)
-
-        pal <- colorFactor("BrBG",
-                           domain = rev(unique(filtered_data$latest.tendencia.6s)),
-                           na.color = "transparent")
         leaflet() %>%
             addProviderTiles(providers$Esri.WorldGrayCanvas,
                              options = providerTileOptions(noWrap = TRUE)
@@ -70,7 +72,7 @@ shinyServer(function(input, output) {
                 data = filtered_data$geom,
                 fillColor = pal(filtered_data$latest.tendencia.6s),
                 weight = 2,
-                color="#ccc",
+                color="#444",
                 fillOpacity = 1,
                 layerId=filtered_data$CO_MACSAUD,
                 highlight = highlightOptions(
@@ -82,13 +84,67 @@ shinyServer(function(input, output) {
             ) %>%
             addLegend(pal = pal,
                       values = filtered_data$latest.tendencia.6s,
-                      opacity = 0.7,
+                      opacity = 1,
                       title = NULL,
-                      #labFormat = labelFormat(transform = function(x) sort(x, decreasing = TRUE)),
                       position = "bottomright"
             ) %>%
             setView(-50, -11, 4)
     })
+
+    output$mapBrazilCapitais <- renderLeaflet({
+
+        # Consolidate data.frame
+        adm_choice <- input$adm
+        filtered_data <- capitais_data %>%
+            filter(epiyear == 2021) %>%
+            filter(epiweek == max(epiweek)) %>%
+            select(c(DS_UF_SIGLA, CO_MUN_RES, CO_MUN_RES_nome, tendencia.6s))
+        latest.tendencia.6s <- filtered_data %>%
+            select(tendencia.6s) %>%
+            coerce2double() %>%
+            as.factor()
+        levels(latest.tendencia.6s) <- LEVELS.TENDENCIA
+        filtered_data$latest.tendencia.6s <- latest.tendencia.6s
+        splited_name <- as.data.frame(str_split_fixed(filtered_data$CO_MUN_RES_nome, " - ", 2))
+        filtered_data$cidade <- trimws(as.character(splited_name$V1))
+        filtered_data$adm <- trimws(as.character(splited_name$V2))
+        idx_states <- match(filtered_data$DS_UF_SIGLA, states$abbrev_state)
+        filtered_data$geom <- states[idx_states, "geom"]
+        filtered_data <- filtered_data %>% filter(adm == adm_choice)
+        # MAP
+        pal <- colorFactor("BrBG",
+                           domain = rev(unique(filtered_data$latest.tendencia.6s)),
+                           reverse = T,
+                           na.color = "transparent")
+        labels <- paste(filtered_data$cidade, ":", filtered_data$latest.tendencia.6s)
+        leaflet() %>%
+            addProviderTiles(providers$Esri.WorldGrayCanvas,
+                             options = providerTileOptions(noWrap = TRUE)
+            ) %>%
+            addPolygons(
+                data = filtered_data$geom,
+                fillColor = pal(filtered_data$latest.tendencia.6s),
+                weight = 3,
+                color="#444",
+                fillOpacity = 1,
+                layerId = filtered_data$CO_MUN_RES,
+                label = labels,
+                highlight = highlightOptions(
+                    weight = 5,
+                    color="#000",
+                    fillOpacity = 1,
+                    bringToFront = T)
+            )  %>%
+            addLegend(pal = pal,
+                      values = filtered_data$latest.tendencia.6s,
+                      opacity = 1,
+                      title = NULL,
+                      position = "bottomright"
+            ) %>%
+            setView(-50, -11, 4)
+    })
+
+
     output$castingPlot <- renderPlot({
 
         if(length(macsaud.id()) == 0)
@@ -152,7 +208,7 @@ shinyServer(function(input, output) {
 
 
     observe({
-        event <- input$mapBrazil_shape_click
+        event <- input$mapBrazilMacro_shape_click
         macsaud.id(event$id)
     })
 })

@@ -38,9 +38,9 @@ addHeader <- function(contentDiv) {
    contentDiv <- tagAppendChild(contentDiv, headerContent)
 }
 
-addContent <- function(contentDiv){
-    mapBrazil <- shinydashboard::box(
-        leafletOutput("mapBrazil", height = 740),
+createTabPanel <- function(mapName, predName, trendName) {
+    map <- shinydashboard::box(
+        leafletOutput(mapName, height = 740),
         title = "Tendência a longo prazo",
         width = 12,
         solidHeader = F,
@@ -48,28 +48,59 @@ addContent <- function(contentDiv){
     )
     sidepanel <- tagList(
         shinydashboard::box(
-                        title = "Predição",
-                        status = "primary",
-                        width = 12,
-                        solidHeader = F,
-                        plotOutput("castingPlot")),
+            title = "Predição",
+            status = "primary",
+            width = 12,
+            solidHeader = F,
+            plotOutput(predName)),
         shinydashboard::box(
             title = "Tendência",
             status = "primary",
             width = 12,
             height = 300,
             solidHeader = F,
-            plotOutput("trendPlot"))
+            plotOutput(trendName))
     )
-    panel <- fluidRow(column(6, mapBrazil),
+    panel <- fluidRow(column(6, map),
                       column(6, sidepanel))
+    panel
+}
+
+
+addContent <- function(contentDiv){
+
+    panelMacro <- createTabPanel("mapBrazilMacro",
+                                 "castingPlot",
+                                 "trendPlot")
+    panelCapitals <- createTabPanel("mapBrazilCapitais",
+                                    "castingCapitaisPlot",
+                                    "trendCapitaisPlot")
+
+    capitais_radio <- radioButtons(
+        "adm",
+        "Selecione o tipo de informação",
+        choiceNames = list("PADRÃO",
+                        "ADM PÚBLICA",
+                        "ENT. EMPRESARIAS",
+                        "ENT. SEM FINS LUCR."),
+        choiceValues = list("",
+                         "ADM PÚBLICA",
+                         "ENT. EMPRESARIAS",
+                         "ENT. SEM FINS LUCR."),
+        inline = TRUE
+    )
+    capitais_checkbox_box <- fluidRow(
+        column(12, shinydashboard::box(width = 12,
+                                       height = 50,
+                                       solidHeader = T,
+                                       capitais_radio)
+    ))
+    panelCapitals <- tagList(capitais_checkbox_box, panelCapitals)
+
     tabs <- tabsetPanel(
         type = "tabs",
-        tabPanel(
-            "Macrorregiões Saúde",
-            panel
-        ),
-        tabPanel("Capitais", tags$div())
+        tabPanel("Capitais", panelCapitals),
+        tabPanel("Macrorregiões Saúde", panelMacro)
     )
     contentDiv <- tagAppendChild(contentDiv, tabs)
 }
