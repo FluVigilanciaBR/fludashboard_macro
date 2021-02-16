@@ -91,7 +91,7 @@ addContent <- function(contentDiv){
     )
     capitais_checkbox_box <- fluidRow(
         column(12, shinydashboard::box(width = 12,
-                                       height = 50,
+                                       height = 70,
                                        solidHeader = T,
                                        capitais_radio)
     ))
@@ -163,13 +163,24 @@ headerStyle <- HTML('
         color: #fff;
         font-weight: bolder;
     }
-    img.align-left, .figure.align-left, object.align-left {
-        float: left ;
-        margin-right: 1em }
-
-    img.align-right, .figure.align-right, object.align-right {
-        float: right ;
-        margin-left: 1em }')
+    .inline label{
+        display: table-cell;
+        text-align: left;
+        vertical-align: middle;
+    }
+    .inline .form-group{display: table-row;}
+    .shiny-options-group input[type=radio]{
+        margin: 0px -20px;
+    }
+    .shiny-input-container-inline{
+        padding: 15px;
+    }
+    .shiny-input-container-inline>label{
+        display: table-cell;
+        padding-bottom: 10px;
+        line-height:1.5;
+    }
+')
 
 headerStyle <- tagList(tags$style(headerStyle),
                       tags$link(rel="stylesheet",
