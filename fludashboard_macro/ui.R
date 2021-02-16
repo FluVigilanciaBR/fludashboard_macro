@@ -75,6 +75,9 @@ addContent <- function(contentDiv){
     panelCapitals <- createTabPanel("mapBrazilCapitais",
                                     "castingCapitaisPlot",
                                     "trendCapitaisPlot")
+    panelUF <- createTabPanel("mapBrazilUFs",
+                              "castingUFsPlot",
+                              "trendUFsPlot")
 
     capitais_radio <- radioButtons(
         "adm",
@@ -99,6 +102,7 @@ addContent <- function(contentDiv){
 
     tabs <- tabsetPanel(
         type = "tabs",
+        tabPanel("Unidades Federativas", panelUF),
         tabPanel("Capitais", panelCapitals),
         tabPanel("Macrorregiões Saúde", panelMacro)
     )
@@ -163,12 +167,7 @@ headerStyle <- HTML('
         color: #fff;
         font-weight: bolder;
     }
-    .inline label{
-        display: table-cell;
-        text-align: left;
-        vertical-align: middle;
-    }
-    .inline .form-group{display: table-row;}
+
     .shiny-options-group input[type=radio]{
         margin: 0px -20px;
     }

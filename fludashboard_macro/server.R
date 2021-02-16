@@ -28,10 +28,11 @@ macros_file <- here("fludashboard_macro/geobrazilmacrosaude.RDS")
 states <- geobr::read_state(year=2019)
 
 #Data files
-datafiles <- Sys.getenv(c("MACROSDATA", "CAPITALSDATA"),
+datafiles <- Sys.getenv(c("MACROSDATA", "CAPITALSDATA", "UFDATA"),
                         names = T)
 macros_data <- readRDS(datafiles[[1]])
 capitais_data <- readRDS(datafiles[[2]])
+ufs_data <- readRDS(datafiles[[3]])
 macros_saude <- readRDS(here(macros_file))
 today.week <- 5
 coerce2double <- function(df){
@@ -42,7 +43,7 @@ coerce2double <- function(df){
 shinyServer(function(input, output) {
     macsaud.id <- shiny::reactiveVal(NA)
     capital.name <- shiny::reactiveVal(NA)
-
+    uf.code <- shiny::reactiveVal(NA)
     ##
     # Views
 
@@ -150,6 +151,54 @@ shinyServer(function(input, output) {
             setView(-50, -11, 4)
     })
 
+    # Map highlighting Brazilian states for selecting UF data
+    output$mapBrazilUFs <- renderLeaflet({
+        # Consolidate data.frame
+        filtered_data <- ufs_data %>%
+            filter(epiyear == 2021) %>%
+            filter(epiweek == max(epiweek)) %>%
+            select(c(DS_UF_SIGLA, CO_UF, tendencia.6s))
+        latest.tendencia.6s <- filtered_data %>%
+            select(tendencia.6s) %>%
+            coerce2double() %>%
+            as.factor()
+        levels(latest.tendencia.6s) <- LEVELS.TENDENCIA
+        filtered_data$latest.tendencia.6s <- latest.tendencia.6s
+        idx_states <- match(filtered_data$DS_UF_SIGLA, states$abbrev_state)
+        filtered_data$geom <- states[idx_states, "geom"]
+        # MAP
+        pal <- colorFactor("BrBG",
+                           domain = rev(unique(filtered_data$latest.tendencia.6s)),
+                           reverse = T,
+                           na.color = "transparent")
+        labels <- paste(filtered_data$DS_UF_SIGLA, ":", filtered_data$latest.tendencia.6s)
+        leaflet() %>%
+            addProviderTiles(providers$Esri.WorldGrayCanvas,
+                             options = providerTileOptions(noWrap = TRUE)
+            ) %>%
+            addPolygons(
+                data = filtered_data$geom,
+                fillColor = pal(filtered_data$latest.tendencia.6s),
+                weight = 3,
+                color="#444",
+                fillOpacity = 1,
+                layerId = filtered_data$CO_UF,
+                label = labels,
+                highlight = highlightOptions(
+                    weight = 5,
+                    color="#000",
+                    fillOpacity = 1,
+                    bringToFront = T)
+            )  %>%
+            addLegend(pal = pal,
+                      values = filtered_data$latest.tendencia.6s,
+                      opacity = 1,
+                      title = NULL,
+                      position = "bottomright"
+            ) %>%
+            setView(-50, -11, 4)
+    })
+
     # Forecast plot for macro regions
     output$castingPlot <- renderPlot({
         if(is.na(macsaud.id()) || is.null(macsaud.id()))
@@ -178,6 +227,21 @@ shinyServer(function(input, output) {
                 mun_res_nome <- paste(mun_res_nome, "-", adm)
             pred.srag.summy <- capitais_data %>%
                 filter( CO_MUN_RES_nome == capital.name.ctrl )
+            p.now.srag <- plot.prediction(pred.srag.summy, today.week, xlimits)
+        }
+        p.now.srag
+    }, height = "auto")
+
+    # Forecasting plots for UFs
+    output$castingUFsPlot <- renderPlot({
+        uf.code.current <- uf.code()
+        if(is.na(uf.code.current) || is.null(uf.code.current))
+            p.now.srag <- NA
+        else {
+            xlimits <- c(1, ufs_data %>%
+                             select(Date) %>% max())
+            pred.srag.summy <- ufs_data %>%
+                filter( CO_UF == uf.code.current )
             p.now.srag <- plot.prediction(pred.srag.summy, today.week, xlimits)
         }
         p.now.srag
@@ -221,6 +285,23 @@ shinyServer(function(input, output) {
         p.nivel
     }, height = 240)
 
+    # Trending plots for UFS
+    output$trendUFsPlot <- renderPlot({
+        uf.code.current <- uf.code()
+        if(is.na(uf.code.current) || is.null(uf.code.current))
+            p.now.srag <- NA
+        else {
+            xlimits <- c(1, ufs_data %>%
+                             select(Date) %>% max())
+            pred.srag.summy <- ufs_data %>%
+                filter( CO_UF == uf.code.current )
+            p.nivel <-  plot.ts.tendencia(df = pred.srag.summy,
+                                          today.week = today.week,
+                                          xlimits = xlimits)
+        }
+        p.nivel
+    }, height = 240)
+
     # Controller
     observe({
         ##
@@ -230,5 +311,8 @@ shinyServer(function(input, output) {
 
         eventCap <- input$mapBrazilCapitais_shape_click
         capital.name(eventCap$id)
+
+        eventUF <- input$mapBrazilUFs_shape_click
+        uf.code(eventUF$id)
     })
 })
