@@ -39,6 +39,38 @@ coerce2double <- function(df){
     as.numeric(unlist(df))
 }
 
+info.leaflet.map <- function(filtered_data){
+    pal <- colorFactor("BrBG",
+                       domain = rev(unique(filtered_data$latest.tendencia.6s)),
+                       reverse = T,
+                       na.color = "transparent")
+    leaflet() %>%
+        addProviderTiles(providers$Esri.WorldGrayCanvas,
+                         options = providerTileOptions(noWrap = TRUE)
+        ) %>%
+        addPolygons(
+            data = filtered_data$geom,
+            fillColor = pal(filtered_data$latest.tendencia.6s),
+            weight = 2,
+            color="#444",
+            fillOpacity = 1,
+            layerId=filtered_data$layerId,
+            highlight = highlightOptions(
+                weight = 5,
+                color="#000",
+                fillOpacity = 1,
+                bringToFront = T),
+            label = filtered_data$labels
+        ) %>%
+        addLegend(pal = pal,
+                  values = filtered_data$latest.tendencia.6s,
+                  opacity = 1,
+                  title = NULL,
+                  position = "bottomright"
+        ) %>%
+        setView(-50, -11, 4)
+}
+
 # Define server logic required to draw a histogram
 shinyServer(function(input, output) {
     macsaud.id <- shiny::reactiveVal(NA)
@@ -63,39 +95,13 @@ shinyServer(function(input, output) {
         geom_order <- match(filtered_data$CO_MACSAUD, macros_saude$CO_MACSAUD)
         filtered_data$geom <- macros_saude[geom_order, "geom"]
 
+        filtered_data$labels <- paste(filtered_data$DS_UF_SIGLA, "-",
+                                      filtered_data$DS_NOMEPAD_macsaud,
+                                      ":", filtered_data$latest.tendencia.6s)
+        filtered_data$layerId <- filtered_data$CO_MACSAUD
+
         # MAP
-        pal <- colorFactor("BrBG",
-                           domain = rev(unique(filtered_data$latest.tendencia.6s)),
-                           reverse = T,
-                           na.color = "transparent")
-        labels <- paste(filtered_data$DS_UF_SIGLA, "-",
-                        filtered_data$DS_NOMEPAD_macsaud,
-                        ":", filtered_data$latest.tendencia.6s)
-        leaflet() %>%
-            addProviderTiles(providers$Esri.WorldGrayCanvas,
-                             options = providerTileOptions(noWrap = TRUE)
-            ) %>%
-            addPolygons(
-                data = filtered_data$geom,
-                fillColor = pal(filtered_data$latest.tendencia.6s),
-                weight = 2,
-                color="#444",
-                fillOpacity = 1,
-                layerId=filtered_data$CO_MACSAUD,
-                highlight = highlightOptions(
-                    weight = 5,
-                    color="#000",
-                    fillOpacity = 1,
-                    bringToFront = T),
-                label = labels
-            ) %>%
-            addLegend(pal = pal,
-                      values = filtered_data$latest.tendencia.6s,
-                      opacity = 1,
-                      title = NULL,
-                      position = "bottomright"
-            ) %>%
-            setView(-50, -11, 4)
+        info.leaflet.map(filtered_data)
     })
 
     # Map highlighting Brazilian states for selecting capital data
@@ -118,37 +124,13 @@ shinyServer(function(input, output) {
         idx_states <- match(filtered_data$DS_UF_SIGLA, states$abbrev_state)
         filtered_data$geom <- states[idx_states, "geom"]
         filtered_data <- filtered_data %>% filter(adm == adm_choice)
-        # MAP
-        pal <- colorFactor("BrBG",
-                           domain = rev(unique(filtered_data$latest.tendencia.6s)),
-                           reverse = T,
-                           na.color = "transparent")
-        labels <- paste(filtered_data$cidade, ":", filtered_data$latest.tendencia.6s)
-        leaflet() %>%
-            addProviderTiles(providers$Esri.WorldGrayCanvas,
-                             options = providerTileOptions(noWrap = TRUE)
-            ) %>%
-            addPolygons(
-                data = filtered_data$geom,
-                fillColor = pal(filtered_data$latest.tendencia.6s),
-                weight = 3,
-                color="#444",
-                fillOpacity = 1,
-                layerId = filtered_data$cidade,
-                label = labels,
-                highlight = highlightOptions(
-                    weight = 5,
-                    color="#000",
-                    fillOpacity = 1,
-                    bringToFront = T)
-            )  %>%
-            addLegend(pal = pal,
-                      values = filtered_data$latest.tendencia.6s,
-                      opacity = 1,
-                      title = NULL,
-                      position = "bottomright"
-            ) %>%
-            setView(-50, -11, 4)
+
+        filtered_data$labels <- paste(filtered_data$cidade, ":",
+                                      filtered_data$latest.tendencia.6s)
+        filtered_data$layerId <- filtered_data$cidade
+
+        # Map
+        info.leaflet.map(filtered_data)
     })
 
     # Map highlighting Brazilian states for selecting UF data
@@ -166,37 +148,12 @@ shinyServer(function(input, output) {
         filtered_data$latest.tendencia.6s <- latest.tendencia.6s
         idx_states <- match(filtered_data$DS_UF_SIGLA, states$abbrev_state)
         filtered_data$geom <- states[idx_states, "geom"]
-        # MAP
-        pal <- colorFactor("BrBG",
-                           domain = rev(unique(filtered_data$latest.tendencia.6s)),
-                           reverse = T,
-                           na.color = "transparent")
-        labels <- paste(filtered_data$DS_UF_SIGLA, ":", filtered_data$latest.tendencia.6s)
-        leaflet() %>%
-            addProviderTiles(providers$Esri.WorldGrayCanvas,
-                             options = providerTileOptions(noWrap = TRUE)
-            ) %>%
-            addPolygons(
-                data = filtered_data$geom,
-                fillColor = pal(filtered_data$latest.tendencia.6s),
-                weight = 3,
-                color="#444",
-                fillOpacity = 1,
-                layerId = filtered_data$CO_UF,
-                label = labels,
-                highlight = highlightOptions(
-                    weight = 5,
-                    color="#000",
-                    fillOpacity = 1,
-                    bringToFront = T)
-            )  %>%
-            addLegend(pal = pal,
-                      values = filtered_data$latest.tendencia.6s,
-                      opacity = 1,
-                      title = NULL,
-                      position = "bottomright"
-            ) %>%
-            setView(-50, -11, 4)
+        filtered_data$labels <- paste(filtered_data$DS_UF_SIGLA, ":",
+                                       filtered_data$latest.tendencia.6s)
+        filtered_data$layerId <- filtered_data$CO_UF
+
+        # Map
+        info.leaflet.map(filtered_data)
     })
 
     # Forecast plot for macro regions
@@ -289,7 +246,7 @@ shinyServer(function(input, output) {
     output$trendUFsPlot <- renderPlot({
         uf.code.current <- uf.code()
         if(is.na(uf.code.current) || is.null(uf.code.current))
-            p.now.srag <- NA
+            p.nivel <- NA
         else {
             xlimits <- c(1, ufs_data %>%
                              select(Date) %>% max())
