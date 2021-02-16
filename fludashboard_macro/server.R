@@ -42,6 +42,11 @@ coerce2double <- function(df){
 shinyServer(function(input, output) {
     macsaud.id <- shiny::reactiveVal(NA)
     capital.name <- shiny::reactiveVal(NA)
+
+    ##
+    # Views
+
+    # Map for health macro regions
     output$mapBrazilMacro <- renderLeaflet({
         # Consolidate data.frame
         filtered_data <- macros_data %>%
@@ -92,8 +97,8 @@ shinyServer(function(input, output) {
             setView(-50, -11, 4)
     })
 
+    # Map highlighting Brazilian states for selecting capital data
     output$mapBrazilCapitais <- renderLeaflet({
-
         # Consolidate data.frame
         adm_choice <- input$adm
         filtered_data <- capitais_data %>%
@@ -145,7 +150,7 @@ shinyServer(function(input, output) {
             setView(-50, -11, 4)
     })
 
-
+    # Forecast plot for macro regions
     output$castingPlot <- renderPlot({
         if(is.na(macsaud.id()) || is.null(macsaud.id()))
             p.now.srag <- NA
@@ -159,7 +164,7 @@ shinyServer(function(input, output) {
         p.now.srag
     }, height = "auto")
 
-
+    # Forcast plot for capitals
     output$castingCapitaisPlot <- renderPlot({
         adm <- input$adm
         capital.name.ctrl <- capital.name()
@@ -178,6 +183,7 @@ shinyServer(function(input, output) {
         p.now.srag
     }, height = "auto")
 
+    # Trending plots for macro regions
     output$trendPlot <- renderPlot({
         if(is.na(macsaud.id()) || is.null(macsaud.id()))
             p.nivel <- NA
@@ -190,11 +196,11 @@ shinyServer(function(input, output) {
             p.nivel <-  plot.ts.tendencia(df = pred.srag.summy,
                                           today.week = today.week,
                                           xlimits = xlimits)
-
         }
         p.nivel
     }, height = 240)
 
+    # Trending plots for capitals
     output$trendCapitaisPlot <- renderPlot({
         adm <- input$adm
         capital.name.ctrl <- capital.name()
@@ -215,8 +221,10 @@ shinyServer(function(input, output) {
         p.nivel
     }, height = 240)
 
-
+    # Controller
     observe({
+        ##
+        # UI Event Handler
         eventMac <- input$mapBrazilMacro_shape_click
         macsaud.id(eventMac$id)
 
