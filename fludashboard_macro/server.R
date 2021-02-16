@@ -2,6 +2,9 @@ shhh <- suppressPackageStartupMessages
 list.of.packages <- c('shiny',
                       'tidyverse',
                       'here',
+                      'cowplot',
+                      'extrafont',
+                      'magick',
                       'ggthemes',
                       'shinycssloaders',
                       "geobr",
@@ -18,6 +21,10 @@ for (package in list.of.packages) {
     shhh(library(package, character.only = TRUE))
 }
 options(bitmapType = "cairo")
+
+CASTING_H = 290
+TREND_H = 230
+
 
 source(here("fludashboard_macro/nowcasting_v2.R"))
 source(here('fludashboard_macro/theme.publication.R'))
@@ -163,12 +170,17 @@ shinyServer(function(input, output) {
         else {
             xlimits <- c(1, macros_data %>%
                              select(Date) %>% max())
-            pred.srag.summy <- macros_data %>% filter(CO_MACSAUD == macsaud.id())
-            p.now.srag <- plot.prediction(pred.srag.summy, today.week, xlimits)
 
+            pred.srag.summy <- macros_data %>% filter(CO_MACSAUD == macsaud.id())
+            label <- unique(paste(pred.srag.summy$DS_UF_SIGLA, "-",
+                            pred.srag.summy$DS_NOMEPAD_macsaud))[[1]]
+            p.now.srag <- plot.prediction(pred.srag.summy,
+                                          today.week,
+                                          xlimits,
+                                          label)
         }
         p.now.srag
-    }, height = "auto")
+    }, height = CASTING_H)
 
     # Forcast plot for capitals
     output$castingCapitaisPlot <- renderPlot({
@@ -180,14 +192,19 @@ shinyServer(function(input, output) {
             xlimits <- c(1, capitais_data %>%
                              select(Date) %>% max())
             mun_res_nome <- capital.name.ctrl
-            if (length(adm))
+            print(adm)
+            if (adm != "")
                 mun_res_nome <- paste(mun_res_nome, "-", adm)
+            print(mun_res_nome)
             pred.srag.summy <- capitais_data %>%
-                filter( CO_MUN_RES_nome == capital.name.ctrl )
-            p.now.srag <- plot.prediction(pred.srag.summy, today.week, xlimits)
+                filter( CO_MUN_RES_nome == mun_res_nome )
+            p.now.srag <- plot.prediction(pred.srag.summy,
+                                          today.week,
+                                          xlimits,
+                                          mun_res_nome)
         }
         p.now.srag
-    }, height = "auto")
+    }, height = CASTING_H)
 
     # Forecasting plots for UFs
     output$castingUFsPlot <- renderPlot({
@@ -199,10 +216,12 @@ shinyServer(function(input, output) {
                              select(Date) %>% max())
             pred.srag.summy <- ufs_data %>%
                 filter( CO_UF == uf.code.current )
-            p.now.srag <- plot.prediction(pred.srag.summy, today.week, xlimits)
+            label <- unique(pred.srag.summy$DS_UF_SIGLA)[[1]]
+            p.now.srag <- plot.prediction(pred.srag.summy, today.week, xlimits,
+                                          label)
         }
         p.now.srag
-    }, height = "auto")
+    }, height = CASTING_H)
 
     # Trending plots for macro regions
     output$trendPlot <- renderPlot({
@@ -219,7 +238,7 @@ shinyServer(function(input, output) {
                                           xlimits = xlimits)
         }
         p.nivel
-    }, height = 240)
+    }, height = TREND_H)
 
     # Trending plots for capitals
     output$trendCapitaisPlot <- renderPlot({
@@ -240,7 +259,7 @@ shinyServer(function(input, output) {
                                           xlimits = xlimits)
         }
         p.nivel
-    }, height = 240)
+    }, height = TREND_H)
 
     # Trending plots for UFS
     output$trendUFsPlot <- renderPlot({
@@ -257,7 +276,7 @@ shinyServer(function(input, output) {
                                           xlimits = xlimits)
         }
         p.nivel
-    }, height = 240)
+    }, height = TREND_H)
 
     # Controller
     observe({

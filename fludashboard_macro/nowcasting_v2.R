@@ -1,4 +1,6 @@
 # Auxiliar functions for nowcasting
+extrafont::loadfonts()
+
 
 # Auxiliar function, sampling from a negative binomial likelihood
 ff <- function(x, idx){
@@ -149,15 +151,27 @@ plot.nowcast <- function(pred.summy, Fim, nowcast = T){
   p0.day
 }
 
-plot.prediction <- function(pred.srag.summy, today.week, xlimits) {
+
+
+add.logo <- function(plot, x=0.4, y=-0.3, scale=0.15){
+    logo <-here('fludashboard_macro/www/static/img/info_gripe.png')
+    ggdraw() +
+      draw_plot(plot) +
+      draw_image(logo, x=x, y=y, scale=scale)
+}
+
+plot.prediction <- function(pred.srag.summy, today.week, xlimits, label="Predição") {
     epilbls <- c(1, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52)
     xbreaks <- c(epilbls, epilbls + 53)
     xlbls <- c(epilbls, epilbls)
+
+
     p <-plot.nowcast(pred.srag.summy, Fim=today.week ) +
       ylab("Incidência de SRAG (por 100mil hab.)") +
       xlab("Semana de primeiros sintomas") +
+      ggtitle(label) +
       scale_x_continuous(breaks = xbreaks, labels = xlbls, limits = xlimits) +
-      theme_Publication(base_size = 16, base_family = 'Roboto') +
+      theme_Publication(base_size = 16) +
       theme(plot.margin=unit(c(1,0,5,5), units='pt'),
             axis.text = element_text(size = rel(1)),
             legend.margin = margin(0,0,0,0, unit='pt'),
@@ -166,8 +180,9 @@ plot.prediction <- function(pred.srag.summy, today.week, xlimits) {
             legend.background = element_blank(),
             legend.key = element_blank(),
             legend.key.size = unit(14, 'pt'),
-            legend.text = element_text(family = 'Roboto', size = rel(1)))
-    p
+            legend.text = element_text(size = rel(1)))
+
+    add.logo(p, x=-0.35, y=-0.1)
 }
 
 LEVELS.TENDENCIA <- c('Prob. queda\n> 95%',
@@ -211,8 +226,8 @@ plot.ts.tendencia <- function(df,
           legend.background = element_blank(),
           legend.key = element_blank(),
           legend.key.size = unit(14, 'pt'),
-          legend.text = element_text(family = 'Roboto', size = rel(.8))
+          legend.text = element_text(size = rel(.8))
     )
 
-  return(plt)
+  add.logo(plt, x=-0.35, scale=0.25)
 }

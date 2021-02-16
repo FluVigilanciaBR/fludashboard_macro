@@ -40,7 +40,7 @@ addHeader <- function(contentDiv) {
 
 createTabPanel <- function(mapName, predName, trendName) {
     map <- shinydashboard::box(
-        leafletOutput(mapName, height = 740),
+        leafletOutput(mapName, height = 640),
         title = "Tendência a longo prazo",
         width = 12,
         solidHeader = F,
@@ -51,6 +51,7 @@ createTabPanel <- function(mapName, predName, trendName) {
             title = "Predição",
             status = "primary",
             width = 12,
+            height = 360,
             solidHeader = F,
             plotOutput(predName)),
         shinydashboard::box(
@@ -178,6 +179,10 @@ headerStyle <- HTML('
         display: table-cell;
         padding-bottom: 10px;
         line-height:1.5;
+    }
+    img.align-right, .figure.align-right, object.align-right {
+        float: right;
+        margin-left: 1em;
     }
 ')
 
