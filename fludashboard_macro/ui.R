@@ -48,7 +48,7 @@ createTabPanel <- function(mapName, predName, trendName) {
     )
     sidepanel <- tagList(
         shinydashboard::box(
-            title = "Casos semanais de SRAG",
+            title = "Predição",
             status = "primary",
             width = 12,
             height = 470,
@@ -104,7 +104,8 @@ addContent <- function(contentDiv){
         type = "tabs",
         tabPanel("Unidades Federativas", panelUF),
         tabPanel("Capitais", panelCapitals),
-        tabPanel("Macrorregiões Saúde", panelMacro)
+        tabPanel("Macrorregiões Saúde", panelMacro),
+        tabPanel("Sobre", includeHTML(here("fludashboard_macro/www/about.html")))
     )
     contentDiv <- tagAppendChild(contentDiv, tabs)
 }
