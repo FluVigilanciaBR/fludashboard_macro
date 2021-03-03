@@ -53,14 +53,14 @@ createTabPanel <- function(mapName, predName, trendName) {
             width = 12,
             height = 470,
             solidHeader = F,
-            plotOutput(predName)),
+            plotOutput(predName, height=380) %>% withSpinner(color = "#DDDDDD")),
         shinydashboard::box(
             title = "Tendência",
             status = "primary",
             width = 12,
             height = 220,
             solidHeader = F,
-            plotOutput(trendName))
+            plotOutput(trendName, height=150) %>% withSpinner(color = "#DDDDDD"))
     )
     panel <- fluidRow(column(6, map),
                       column(6, sidepanel))
@@ -197,4 +197,5 @@ shinyUI(bootstrapPage(headerStyle,
                       getContent(),
                       tags$script(defer="defer",
                                   src="//barra.brasil.gov.br/barra_2.0.js",
-                                  type="text/javascript")))
+                                  type="text/javascript"),
+                      title="INFOGripe"))
