@@ -22,8 +22,8 @@ for (package in list.of.packages) {
 }
 options(bitmapType = "cairo")
 
-CASTING_H = 290
-TREND_H = 230
+CASTING_H = 400
+TREND_H = 150
 
 
 source(here("fludashboard_macro/nowcasting_v2.R"))

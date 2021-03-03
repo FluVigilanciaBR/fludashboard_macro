@@ -166,7 +166,7 @@ plot.prediction <- function(pred.srag.summy, today.week, xlimits, label="Prediç
     xlbls <- c(epilbls, epilbls)
 
 
-    p <-plot.nowcast(pred.srag.summy, Fim=today.week ) +
+    plt <-plot.nowcast(pred.srag.summy, Fim=today.week ) +
       ylab("Incidência de SRAG (por 100mil hab.)") +
       xlab("Semana de primeiros sintomas") +
       ggtitle(label) +
@@ -182,7 +182,7 @@ plot.prediction <- function(pred.srag.summy, today.week, xlimits, label="Prediç
             legend.key.size = unit(14, 'pt'),
             legend.text = element_text(size = rel(1)))
 
-    add.logo(p, x=-0.35, y=-0.1)
+    plt
 }
 
 LEVELS.TENDENCIA <- c('Prob. queda\n> 95%',
@@ -228,6 +228,5 @@ plot.ts.tendencia <- function(df,
           legend.key.size = unit(14, 'pt'),
           legend.text = element_text(size = rel(.8))
     )
-
-  add.logo(plt, x=-0.35, scale=0.25)
+  plt
 }
