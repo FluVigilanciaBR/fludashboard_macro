@@ -51,14 +51,14 @@ createTabPanel <- function(mapName, predName, trendName) {
             title = "Predição",
             status = "primary",
             width = 12,
-            height = 360,
+            height = 470,
             solidHeader = F,
             plotOutput(predName)),
         shinydashboard::box(
             title = "Tendência",
             status = "primary",
             width = 12,
-            height = 300,
+            height = 220,
             solidHeader = F,
             plotOutput(trendName))
     )
@@ -66,7 +66,6 @@ createTabPanel <- function(mapName, predName, trendName) {
                       column(6, sidepanel))
     panel
 }
-
 
 addContent <- function(contentDiv){
 
