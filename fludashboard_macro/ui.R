@@ -48,7 +48,7 @@ createTabPanel <- function(mapName, predName, trendName) {
     )
     sidepanel <- tagList(
         shinydashboard::box(
-            title = "Predição",
+            title = "Casos semanais de SRAG",
             status = "primary",
             width = 12,
             height = 470,
