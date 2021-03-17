@@ -97,7 +97,9 @@ shinyServer(function(input, output) {
             select(tendencia.6s) %>%
             coerce2double() %>%
             as.factor()
-        levels(latest.tendencia.6s) <- LEVELS.TENDENCIA
+        latest.tendencia.6s <- factor(latest.tendencia.6s,
+                                      labels=LEVELS.TENDENCIA,
+                                      levels=c(-1, -.5, 0, .5, 1))
         filtered_data$latest.tendencia.6s <- latest.tendencia.6s
         geom_order <- match(filtered_data$CO_MACSAUD, macros_saude$CO_MACSAUD)
         filtered_data$geom <- macros_saude[geom_order, "geom"]
@@ -123,7 +125,9 @@ shinyServer(function(input, output) {
             select(tendencia.6s) %>%
             coerce2double() %>%
             as.factor()
-        levels(latest.tendencia.6s) <- LEVELS.TENDENCIA
+        latest.tendencia.6s <- factor(latest.tendencia.6s,
+                                      labels=LEVELS.TENDENCIA,
+                                      levels=c(-1, -.5, 0, .5, 1))
         filtered_data$latest.tendencia.6s <- latest.tendencia.6s
         splited_name <- as.data.frame(str_split_fixed(filtered_data$CO_MUN_RES_nome, " - ", 2))
         filtered_data$cidade <- trimws(as.character(splited_name$V1))
@@ -151,7 +155,9 @@ shinyServer(function(input, output) {
             select(tendencia.6s) %>%
             coerce2double() %>%
             as.factor()
-        levels(latest.tendencia.6s) <- LEVELS.TENDENCIA
+        latest.tendencia.6s <- factor(latest.tendencia.6s,
+                                      labels=LEVELS.TENDENCIA,
+                                      levels=c(-1, -.5, 0, .5, 1))
         filtered_data$latest.tendencia.6s <- latest.tendencia.6s
         idx_states <- match(filtered_data$DS_UF_SIGLA, states$abbrev_state)
         filtered_data$geom <- states[idx_states, "geom"]
