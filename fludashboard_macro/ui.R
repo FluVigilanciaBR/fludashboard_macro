@@ -10,13 +10,23 @@ list.of.packages <- c('shiny',
 
 new.packages <- list.of.packages[!(list.of.packages %in%
                                        installed.packages()[, "Package"])]
+
+
+
 if (length(new.packages))
     install.packages(new.packages, dependencies = TRUE)
 
 for (package in list.of.packages) {
     shhh(library(package, character.only = TRUE))
 }
+# Install dqshiny
+remotes::install_github("daqana/dqshiny", ref = "b2c60d61",
+                        force = FALSE, quiet = TRUE)
+shhh(library(dqshiny))
+
 options(bitmapType = "cairo")
+
+CITIES_MACRO_PATH <- here("fludashboard_macro/tabela_municipio_macsaud.csv")
 
 getNavBar <- function() {
     navbar <- tags$div(
@@ -69,15 +79,16 @@ createTabPanel <- function(mapName, predName, trendName) {
 
 addContent <- function(contentDiv){
 
-    panelMacro <- createTabPanel("mapBrazilMacro",
-                                 "castingPlot",
-                                 "trendPlot")
-    panelCapitals <- createTabPanel("mapBrazilCapitais",
-                                    "castingCapitaisPlot",
-                                    "trendCapitaisPlot")
+
+    ## Dashboard components for UF
     panelUF <- createTabPanel("mapBrazilUFs",
                               "castingUFsPlot",
                               "trendUFsPlot")
+
+    ## Dashboard components for capital cities
+    panelCapitals <- createTabPanel("mapBrazilCapitais",
+                                    "castingCapitaisPlot",
+                                    "trendCapitaisPlot")
 
     capitais_radio <- radioButtons(
         "adm",
@@ -100,6 +111,27 @@ addContent <- function(contentDiv){
     ))
     panelCapitals <- tagList(capitais_checkbox_box, panelCapitals)
 
+    ## Dashboard components for macro
+    panelMacro <- createTabPanel("mapBrazilMacro",
+                                 "castingPlot",
+                                 "trendPlot")
+    cities <- CITIES_MACRO_PATH %>% read.csv(sep = ";")
+    opt_cities <- cities %>% pull(DS_NOMEPAD_municip)
+    search_macro <- autocomplete_input("citiesMacro_mapping",
+                                       "Cidade:",
+                                       opt_cities,
+                                       contains = TRUE,
+                                       max_options = 1000);
+
+    search_macro_box <- fluidRow(
+        column(12, shinydashboard::box(width = 12,
+                                       height = 70,
+                                       solidHeader = T,
+                                       search_macro)
+        ))
+    panelMacro <- tagList(search_macro_box, panelMacro)
+
+    ## Assemble all panels
     tabs <- tabsetPanel(
         type = "tabs",
         tabPanel("Unidades Federativas", panelUF),
@@ -115,14 +147,13 @@ addFooter <- function(contentDiv) {
                                                  id = "footer-brasil"))
 }
 
-
-
 getContent <- function() {
     contentDiv <- div(class = "container-fluid") %>%
         addHeader() %>%
         addContent() %>%
         addFooter()
 }
+
 headerStyle <- HTML('
     html, document, body {
         margin: 0!important;
@@ -187,13 +218,12 @@ headerStyle <- HTML('
 ')
 
 headerStyle <- tagList(tags$style(headerStyle),
-                      tags$link(rel="stylesheet",
-                                href="http://www.ensp.fiocruz.br/portal-ensp/_estilos/ensp_barra-fiocruz.css",
-                                type="text/css",
-                                media="all"))
-headerStyle <- tags$head(headerStyle)
+                       tags$link(rel="stylesheet",
+                                 href="http://www.ensp.fiocruz.br/portal-ensp/_estilos/ensp_barra-fiocruz.css",
+                                 type="text/css",
+                                 media="all"))
 
-shinyUI(bootstrapPage(headerStyle,
+shinyUI(bootstrapPage(tags$head(headerStyle),
                       getContent(),
                       tags$script(defer="defer",
                                   src="//barra.brasil.gov.br/barra_2.0.js",

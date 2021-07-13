@@ -185,7 +185,7 @@ plot.prediction <- function(pred.srag.summy, today.week, xlimits, label="Prediç
     plt
 }
 
-LEVELS.TENDENCIA <- c('Prob. queda\n> 95%',
+LEVELS.TENDENCIA <- list('Prob. queda\n> 95%',
                       'Prob. queda\n> 75%',
                       'Estabilidade./\noscilação',
                       'Prob. cresc.\n> 75%',
