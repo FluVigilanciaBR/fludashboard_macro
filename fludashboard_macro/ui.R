@@ -26,8 +26,6 @@ shhh(library(dqshiny))
 
 options(bitmapType = "cairo")
 
-CITIES_MACRO_PATH <- here("fludashboard_macro/tabela_municipio_macsaud.csv")
-
 getNavBar <- function() {
     navbar <- tags$div(
         tags$a(
@@ -115,13 +113,13 @@ addContent <- function(contentDiv){
     panelMacro <- createTabPanel("mapBrazilMacro",
                                  "castingPlot",
                                  "trendPlot")
-    cities <- CITIES_MACRO_PATH %>% read.csv(sep = ";")
-    opt_cities <- cities %>% pull(DS_NOMEPAD_municip)
+
     search_macro <- autocomplete_input("citiesMacro_mapping",
                                        "Cidade:",
-                                       opt_cities,
+                                       NULL,
                                        contains = TRUE,
-                                       max_options = 1000);
+                                       create = FALSE,
+                                      placeholder = "Carregando...");
 
     search_macro_box <- fluidRow(
         column(12, shinydashboard::box(width = 12,
