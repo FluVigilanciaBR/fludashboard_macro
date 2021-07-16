@@ -115,7 +115,7 @@ addContent <- function(contentDiv){
                                  "trendPlot")
 
     search_macro <- autocomplete_input("citiesMacro_mapping",
-                                       "Cidade:",
+                                       NULL,
                                        NULL,
                                        contains = TRUE,
                                        create = FALSE,
@@ -212,6 +212,20 @@ headerStyle <- HTML('
     img.align-right, .figure.align-right, object.align-right {
         float: right;
         margin-left: 1em;
+    }
+    .autocomplete-items{
+        z-index:1000000!important;
+    }
+    .shiny-input-container{
+        width: calc(100% - 20px)!important;
+        margin: 10px;
+        height: 70px;
+    }
+    .shiny-input-container input{
+        height:50px;
+    }
+    .box-body{
+        padding-top:1px!important;
     }
 ')
 
