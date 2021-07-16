@@ -1,4 +1,6 @@
 data/
+.Renviron
+*.Rproj
 .Rproj.user
 .Rhistory
 .RData

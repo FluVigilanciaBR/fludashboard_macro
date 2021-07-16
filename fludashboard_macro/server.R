@@ -47,7 +47,7 @@ datafiles <- Sys.getenv(c("MACROSDATA", "CAPITALSDATA", "UFDATA"),
 macros_data <- readRDS(datafiles[[1]])
 capitais_data <- readRDS(datafiles[[2]])
 ufs_data <- readRDS(datafiles[[3]])
-macros_saude <- readRDS(here(macros_file))
+macros_saude <- readRDS(macros_file)
 today.week <- 5
 coerce2double <- function(df){
     as.numeric(unlist(df))
@@ -87,6 +87,14 @@ info.leaflet.map <- function(filtered_data){
                 bringToFront = T),
             label = filtered_data$labels
         ) %>%
+        #addPolygons(
+        #    data = filtered_data$geom,
+        #    fillColor = pal(filtered_data$latest.tendencia.6s),
+        #    weight = 5,
+        #    color="#000",
+        #    fillOpacity = 0,
+        #    layerId=filtered_data$layerIdWWWWW
+        #) %>%
         addLegend(pal = pal,
                   values = filtered_data$latest.tendencia.6s,
                   opacity = 1,
