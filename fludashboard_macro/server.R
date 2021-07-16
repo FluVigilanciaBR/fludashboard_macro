@@ -20,6 +20,11 @@ if (length(new.packages))
 for (package in list.of.packages) {
     shhh(library(package, character.only = TRUE))
 }
+
+# Install dqshiny
+remotes::install_github("daqana/dqshiny", ref = "b2c60d61",
+                        force = FALSE, quiet = TRUE)
+shhh(library(dqshiny))
 options(bitmapType = "cairo")
 
 CASTING_H = 400
@@ -29,6 +34,8 @@ TREND_H = 150
 source(here("fludashboard_macro/nowcasting_v2.R"))
 source(here('fludashboard_macro/theme.publication.R'))
 source(here('fludashboard_macro/episem.R'))
+
+
 
 # Shape info
 macros_file <- here("fludashboard_macro/geobrazilmacrosaude.RDS")
@@ -40,10 +47,21 @@ datafiles <- Sys.getenv(c("MACROSDATA", "CAPITALSDATA", "UFDATA"),
 macros_data <- readRDS(datafiles[[1]])
 capitais_data <- readRDS(datafiles[[2]])
 ufs_data <- readRDS(datafiles[[3]])
-macros_saude <- readRDS(here(macros_file))
+macros_saude <- readRDS(macros_file)
 today.week <- 5
 coerce2double <- function(df){
     as.numeric(unlist(df))
+}
+
+# Cities data
+CITIES_MACRO_PATH <- here("fludashboard_macro/tabela_municipio_macsaud.csv")
+CITIES <- CITIES_MACRO_PATH %>% read.csv(sep = ";")
+
+macro.from.city <- function(city){
+    CITIES %>%
+        filter(DS_NOMEPAD_municip == toupper(city)) %>%
+        pull(CO_MACSAUD) -> macro.searched.id
+    macro.searched.id
 }
 
 info.leaflet.map <- function(filtered_data){
@@ -69,6 +87,14 @@ info.leaflet.map <- function(filtered_data){
                 bringToFront = T),
             label = filtered_data$labels
         ) %>%
+        #addPolygons(
+        #    data = filtered_data$geom,
+        #    fillColor = pal(filtered_data$latest.tendencia.6s),
+        #    weight = 5,
+        #    color="#000",
+        #    fillOpacity = 0,
+        #    layerId=filtered_data$layerIdWWWWW
+        #) %>%
         addLegend(pal = pal,
                   values = filtered_data$latest.tendencia.6s,
                   opacity = 1,
@@ -79,8 +105,9 @@ info.leaflet.map <- function(filtered_data){
 }
 
 # Define server logic required to draw a histogram
-shinyServer(function(input, output) {
+shinyServer(function(input, output, session) {
     macsaud.id <- shiny::reactiveVal(NA)
+    city.search.macsaud.id <- shiny::reactiveVal(NA)
     capital.name <- shiny::reactiveVal(NA)
     uf.code <- shiny::reactiveVal(NA)
     ##
@@ -246,6 +273,8 @@ shinyServer(function(input, output) {
         p.nivel
     }, height = TREND_H)
 
+
+
     # Trending plots for capitals
     output$trendCapitaisPlot <- renderPlot({
         adm <- input$adm
@@ -284,17 +313,39 @@ shinyServer(function(input, output) {
         p.nivel
     }, height = TREND_H)
 
-    # Controller
-    observe({
-        ##
-        # UI Event Handler
-        eventMac <- input$mapBrazilMacro_shape_click
-        macsaud.id(eventMac$id)
 
+    # Controllers
+
+    observeEvent(input$mapBrazilCapitais_shape_click, {
         eventCap <- input$mapBrazilCapitais_shape_click
         capital.name(eventCap$id)
+    })
 
+    observeEvent(input$mapBrazilUFs_shape_click, {
         eventUF <- input$mapBrazilUFs_shape_click
         uf.code(eventUF$id)
     })
+
+    observeEvent(input$mapBrazilMacro_shape_click, {
+        eventMac <- input$mapBrazilMacro_shape_click
+        macsaud.id(eventMac$id)
+    })
+
+    observeEvent(input$citiesMacro_mapping, {
+        input_cities_macro <- as.character(input$citiesMacro_mapping)
+        # Cities auto input field
+        opt_cities <- CITIES %>% pull(DS_NOMEPAD_municip)
+        update_autocomplete_input(session,
+                                  "citiesMacro_mapping",
+                                  options = opt_cities,
+                                  placeholder="Pesquise por uma cidade")
+        if(nchar(input_cities_macro) > 3) {
+            city.search.name.current <- input_cities_macro
+            if(!(is.na(city.search.name.current) || is.null(city.search.name.current))){
+                mfc<- macro.from.city(city.search.name.current)
+                macsaud.id(mfc)
+            }
+        }
+    })
+
 })
