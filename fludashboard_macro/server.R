@@ -44,6 +44,9 @@ states <- geobr::read_state(year=2019)
 #Data files
 datafiles <- Sys.getenv(c("MACROSDATA", "CAPITALSDATA", "UFDATA"),
                         names = T)
+#datafiles <- list('MACROSDATA'='/home/marfcg/codes/FluVigilanciaBR/seasonality/methods/nowcasting_capitais/macros_current.rds',
+#                  'CAPITAISDATA'='/home/marfcg/codes/FluVigilanciaBR/seasonality/methods/nowcasting_capitais/capitais_current.rds',
+#                  'UFDATA'='/home/marfcg/codes/FluVigilanciaBR/seasonality/methods/nowcasting_capitais/ufs_current.rds')
 macros_data <- readRDS(datafiles[[1]])
 capitais_data <- readRDS(datafiles[[2]])
 ufs_data <- readRDS(datafiles[[3]])
@@ -145,7 +148,7 @@ shinyServer(function(input, output, session) {
         # Consolidate data.frame
         adm_choice <- input$adm
         filtered_data <- capitais_data %>%
-            filter(epiyear == 2021) %>%
+            filter(epiyear == max(epiyear)) %>%
             filter(epiweek == max(epiweek)) %>%
             select(c(DS_UF_SIGLA, CO_MUN_RES, CO_MUN_RES_nome, tendencia.6s))
         latest.tendencia.6s <- filtered_data %>%
@@ -175,7 +178,7 @@ shinyServer(function(input, output, session) {
     output$mapBrazilUFs <- renderLeaflet({
         # Consolidate data.frame
         filtered_data <- ufs_data %>%
-            filter(epiyear == 2021) %>%
+            filter(epiyear == max(epiyear)) %>%
             filter(epiweek == max(epiweek)) %>%
             select(c(DS_UF_SIGLA, CO_UF, tendencia.6s))
         latest.tendencia.6s <- filtered_data %>%
@@ -243,16 +246,14 @@ shinyServer(function(input, output, session) {
     output$castingUFsPlot <- renderPlot({
         uf.code.current <- uf.code()
         if(is.na(uf.code.current) || is.null(uf.code.current))
-            p.now.srag <- NA
-        else {
-            xlimits <- c(1, ufs_data %>%
-                             select(Date) %>% max())
-            pred.srag.summy <- ufs_data %>%
-                filter( CO_UF == uf.code.current )
-            label <- unique(pred.srag.summy$DS_UF_SIGLA)[[1]]
-            p.now.srag <- plot.prediction(pred.srag.summy, today.week, xlimits,
-                                          label)
-        }
+            uf.code.current = 0 
+        xlimits <- c(1, ufs_data %>%
+                         select(Date) %>% max())
+        pred.srag.summy <- ufs_data %>%
+            filter( CO_UF == uf.code.current )
+        label <- unique(pred.srag.summy$DS_UF_SIGLA)[[1]]
+        p.now.srag <- plot.prediction(pred.srag.summy, today.week, xlimits,
+                                      label)
         p.now.srag
     }, height = CASTING_H)
 
@@ -300,16 +301,14 @@ shinyServer(function(input, output, session) {
     output$trendUFsPlot <- renderPlot({
         uf.code.current <- uf.code()
         if(is.na(uf.code.current) || is.null(uf.code.current))
-            p.nivel <- NA
-        else {
-            xlimits <- c(1, ufs_data %>%
-                             select(Date) %>% max())
-            pred.srag.summy <- ufs_data %>%
-                filter( CO_UF == uf.code.current )
-            p.nivel <-  plot.ts.tendencia(df = pred.srag.summy,
-                                          today.week = today.week,
-                                          xlimits = xlimits)
-        }
+            uf.code.current <- 0
+        xlimits <- c(1, ufs_data %>%
+                         select(Date) %>% max())
+        pred.srag.summy <- ufs_data %>%
+            filter( CO_UF == uf.code.current )
+        p.nivel <-  plot.ts.tendencia(df = pred.srag.summy,
+                                      today.week = today.week,
+                                      xlimits = xlimits)
         p.nivel
     }, height = TREND_H)
 

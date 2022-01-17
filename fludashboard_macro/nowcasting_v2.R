@@ -162,8 +162,8 @@ add.logo <- function(plot, x=0.4, y=-0.3, scale=0.15){
 
 plot.prediction <- function(pred.srag.summy, today.week, xlimits, label="Predição") {
     epilbls <- c(1, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52)
-    xbreaks <- c(epilbls, epilbls + 53)
-    xlbls <- c(epilbls, epilbls)
+    xbreaks <- pred.srag.summy$Date[pred.srag.summy$epiweek %in% epilbls]
+    xlbls <- pred.srag.summy$epiweek[pred.srag.summy$Date %in% xbreaks]
 
 
     plt <-plot.nowcast(pred.srag.summy, Fim=today.week ) +
@@ -196,8 +196,8 @@ plot.ts.tendencia <- function(df,
                               today.week=0,
                               xlimits=c(1, 53)){
   epilbls <- c(1, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52)
-  xbreaks <- c(epilbls, epilbls + 53)
-  xlbls <- c(epilbls, epilbls)
+  xbreaks <- df$Date[df$epiweek %in% epilbls]
+  xlbls <- df$epiweek[df$Date %in% xbreaks]
   plt <- df %>%
     select(Date, tendencia.3s, tendencia.6s) %>%
     mutate(tendencia.3s = case_when(
