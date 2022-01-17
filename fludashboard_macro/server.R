@@ -44,9 +44,7 @@ states <- geobr::read_state(year=2019)
 #Data files
 datafiles <- Sys.getenv(c("MACROSDATA", "CAPITALSDATA", "UFDATA"),
                         names = T)
-#datafiles <- list('MACROSDATA'='/home/marfcg/codes/FluVigilanciaBR/seasonality/methods/nowcasting_capitais/macros_current.rds',
-#                  'CAPITAISDATA'='/home/marfcg/codes/FluVigilanciaBR/seasonality/methods/nowcasting_capitais/capitais_current.rds',
-#                  'UFDATA'='/home/marfcg/codes/FluVigilanciaBR/seasonality/methods/nowcasting_capitais/ufs_current.rds')
+
 macros_data <- readRDS(datafiles[[1]])
 capitais_data <- readRDS(datafiles[[2]])
 ufs_data <- readRDS(datafiles[[3]])
