@@ -9,7 +9,8 @@ list.of.packages <- c('shiny',
                       'shinycssloaders',
                       "geobr",
                       "stringr",
-                      'leaflet')
+                      'leaflet',
+                      'plotly')
 
 new.packages <- list.of.packages[!(list.of.packages %in%
                                        installed.packages()[, "Package"])]
@@ -198,9 +199,9 @@ shinyServer(function(input, output, session) {
     })
 
     # Forecast plot for macro regions
-    output$castingPlot <- renderPlot({
+    output$castingPlot <- renderPlotly({
         if(is.na(macsaud.id()) || is.null(macsaud.id()))
-            p.now.srag <- NA
+            p.now.srag <- plotly_empty()
         else {
             xlimits <- c(1, macros_data %>%
                              select(Date) %>% max())
@@ -212,16 +213,30 @@ shinyServer(function(input, output, session) {
                                           today.week,
                                           xlimits,
                                           label)
+            p.now.srag<- ggplotly(p.now.srag,
+                                  tooltip=c('text')) %>%
+                style(name='IC 90%', traces=2) %>%
+                config(modeBarButtonsToRemove = c('hoverClosestCartesian', 'hoverCompareCartesian')) %>%
+                layout(legend = list(orientation='h',
+                                     y=-.25,
+                                     font=list(size=14)),
+                       hovermode='text',
+                       hoverlabel=list(font=list(size=12,
+                                                 color='black'),
+                                       bgcolor='rgba(215,215,215,0.5)'),
+                       title=list(font=list(size=18), x=0, y=1, yanchor='bottom', yref='paper', pad=list(b=10, t=0)),
+                       xaxis=list(title=list(standoff=0)),
+                       margin=list(t=55))
         }
         p.now.srag
-    }, height = CASTING_H)
+    })
 
     # Forcast plot for capitals
-    output$castingCapitaisPlot <- renderPlot({
+    output$castingCapitaisPlot <- renderPlotly({
         adm <- input$adm
         capital.name.ctrl <- capital.name()
         if(is.na(capital.name.ctrl) || is.null(capital.name.ctrl))
-            p.now.srag <- NA
+            p.now.srag <- plotly_empty()
         else {
             xlimits <- c(1, capitais_data %>%
                              select(Date) %>% max())
@@ -236,12 +251,26 @@ shinyServer(function(input, output, session) {
                                           today.week,
                                           xlimits,
                                           mun_res_nome)
+            p.now.srag<- ggplotly(p.now.srag,
+                                  tooltip=c('text')) %>%
+                style(name='IC 90%', traces=2) %>%
+                config(modeBarButtonsToRemove = c('hoverClosestCartesian', 'hoverCompareCartesian')) %>%
+                layout(legend = list(orientation='h',
+                                     y=-.25,
+                                     font=list(size=14)),
+                       hovermode='text',
+                       hoverlabel=list(font=list(size=12,
+                                                 color='black'),
+                                       bgcolor='rgba(215,215,215,0.5)'),
+                       title=list(font=list(size=18), x=0, y=1, yanchor='bottom', yref='paper', pad=list(b=10, t=0)),
+                       xaxis=list(title=list(standoff=0)),
+                       margin=list(t=55))
         }
         p.now.srag
-    }, height = CASTING_H)
+    })
 
     # Forecasting plots for UFs
-    output$castingUFsPlot <- renderPlot({
+    output$castingUFsPlot <- renderPlotly({
         uf.code.current <- uf.code()
         if(is.na(uf.code.current) || is.null(uf.code.current))
             uf.code.current = 0 
@@ -252,8 +281,21 @@ shinyServer(function(input, output, session) {
         label <- unique(pred.srag.summy$DS_UF_SIGLA)[[1]]
         p.now.srag <- plot.prediction(pred.srag.summy, today.week, xlimits,
                                       label)
-        p.now.srag
-    }, height = CASTING_H)
+        ggplotly(p.now.srag,
+                 tooltip=c('text')) %>%
+            style(name='IC 90%', traces=2) %>%
+            config(modeBarButtonsToRemove = c('hoverClosestCartesian', 'hoverCompareCartesian')) %>%
+            layout(legend = list(orientation='h',
+                                 y=-.25,
+                                 font=list(size=14)),
+                   hovermode='text',
+                   hoverlabel=list(font=list(size=12,
+                                             color='black'),
+                                   bgcolor='rgba(215,215,215,0.5)'),
+                   title=list(font=list(size=18), x=0, y=1, yanchor='bottom', yref='paper', pad=list(b=10, t=0)),
+                   xaxis=list(title=list(standoff=0)),
+                   margin=list(t=55))
+    })
 
     # Trending plots for macro regions
     output$trendPlot <- renderPlot({

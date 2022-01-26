@@ -6,7 +6,8 @@ list.of.packages <- c('shiny',
                       'shinycssloaders',
                       'shinydashboard',
                       'leaflet',
-                      'sf')
+                      'sf',
+                      'plotly')
 
 new.packages <- list.of.packages[!(list.of.packages %in%
                                        installed.packages()[, "Package"])]
@@ -49,19 +50,19 @@ addHeader <- function(contentDiv) {
 createTabPanel <- function(mapName, predName, trendName) {
     map <- shinydashboard::box(
         leafletOutput(mapName, height = 640),
-        title = "Tendência a longo prazo",
+        title = "Tendência de longo prazo (últimas 6 semanas)",
         width = 12,
         solidHeader = F,
         status = "primary"
     )
     sidepanel <- tagList(
         shinydashboard::box(
-            title = "Casos Semanais de SRAG (clique no mapa para selecionar)",
+            title = "Casos Semanais de SRAG (clique no mapa para selecionar um local)",
             status = "primary",
             width = 12,
             height = 470,
             solidHeader = F,
-            plotOutput(predName, height=380) %>% withSpinner(color = "#DDDDDD")),
+            plotlyOutput(predName, height=380) %>% withSpinner(color = "#DDDDDD")),
         shinydashboard::box(
             title = "Tendência",
             status = "primary",

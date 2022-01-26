@@ -122,11 +122,16 @@ plot.nowcast <- function(pred.summy, Fim, nowcast = T){
     p0.day <- pred.summy %>%
       ggplot(aes(x =  Date, y = Casos.cut,
                  color = "Casos notificados",
-                 linetype = "Casos notificados")) +
+                 linetype = "Casos notificados",
+                 text=paste0('Semana: ', epiweek, ' ', epiyear,
+                            '<br>Casos notificados: ', round(Casos.cut,2),
+                            '<br>Casos estimados: ', round(Median,2), ' [',round(IC90I,2),'-',round(IC90S,2),']',
+                            '<br>Média móvel: ', round(rolling_average,2)),
+                 group=DS_UF_SIGLA)) +
       geom_line(size = 1, na.rm = T) +
       geom_ribbon( aes( ymin=IC90I, ymax=IC90S), fill = 'gray',
                    color = 'gray', alpha = 0.5,
-                   show.legend = F) +
+                   show.legend = FALSE) +
       geom_line(aes(x = Date, y = Median,
                     colour = "Casos estimados",
                     linetype = "Casos estimados"),
@@ -142,12 +147,6 @@ plot.nowcast <- function(pred.summy, Fim, nowcast = T){
                             guide = guide_legend(reverse=F))
   }
 
-  p0.day <- p0.day +
-    #ylab("Casos hospitalização de SRAG") +
-    #xlab("Tempo") +
-    theme_bw( base_size = 14) +
-    theme( legend.position = c(0.2, 0.8), legend.title = element_blank())
-
   p0.day
 }
 
@@ -161,7 +160,7 @@ add.logo <- function(plot, x=0.4, y=-0.3, scale=0.15){
 }
 
 plot.prediction <- function(pred.srag.summy, today.week, xlimits, label="Predição") {
-    epilbls <- c(1, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52)
+    epilbls <- c(1, 8, 16, 24, 32, 40, 48)
     xbreaks <- pred.srag.summy$Date[pred.srag.summy$epiweek %in% epilbls]
     xlbls <- pred.srag.summy$epiweek[pred.srag.summy$Date %in% xbreaks]
 
@@ -171,9 +170,8 @@ plot.prediction <- function(pred.srag.summy, today.week, xlimits, label="Prediç
       xlab("Semana de primeiros sintomas") +
       ggtitle(label) +
       scale_x_continuous(breaks = xbreaks, labels = xlbls, limits = xlimits) +
-      theme_Publication(base_size = 16) +
+      theme_Publication(base_size = 14, base_family = 'Roboto') +
       theme(plot.margin=unit(c(1,0,5,5), units='pt'),
-            axis.text = element_text(size = rel(1)),
             legend.margin = margin(0,0,0,0, unit='pt'),
             legend.justification=c(0,1),
             legend.position=c(0.015, 1.05),
