@@ -103,12 +103,14 @@ addContent <- function(contentDiv){
         inline = TRUE
     )
     capitais_checkbox_box <- fluidRow(
-        column(12, shinydashboard::box(width = 12,
-                                       height = 70,
-                                       solidHeader = T,
-                                       capitais_radio)
+        column(12,
+               shinydashboard::box(width = 12,
+                                   height = 70,
+                                   solidHeader = T,
+                                   capitais_radio)
     ))
-    panelCapitals <- tagList(capitais_checkbox_box, panelCapitals)
+    panelCapitals <- tagList(capitais_checkbox_box,
+                             panelCapitals)
 
     ## Dashboard components for macro
     panelMacro <- createTabPanel("mapBrazilMacro",
@@ -125,7 +127,7 @@ addContent <- function(contentDiv){
     search_macro_box <- fluidRow(
         column(12, shinydashboard::box(width = 12,
                                        height = 70,
-                                       solidHeader = T,
+                                       solidHeader = F,
                                        search_macro)
         ))
     panelMacro <- tagList(search_macro_box, panelMacro)
@@ -200,7 +202,7 @@ headerStyle <- HTML('
     }
 
     .shiny-options-group input[type=radio]{
-        margin: 0px -20px;
+        margin: -20px -20px;
     }
     .shiny-input-container-inline{
         padding: 15px;
